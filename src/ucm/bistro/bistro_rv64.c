@@ -93,4 +93,10 @@ ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
 
     return ucm_bistro_apply_patch(func_ptr, &patch, sizeof(patch));
 }
+
+ucs_status_t ucm_bistro_relocate_one(ucm_bistro_relocate_context_t *ctx)
+{
+    return UCS_ERR_UNSUPPORTED;
+}
+
 #endif
