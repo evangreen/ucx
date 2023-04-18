@@ -190,6 +190,7 @@ ucs_status_t init_test_params(perftest_params_t *params)
     params->super.ucp.recv_datatype = UCP_PERF_DATATYPE_CONTIG;
     params->super.ucp.am_hdr_size   = 0;
     strcpy(params->super.uct.dev_name, TL_RESOURCE_NAME_NONE);
+    strcpy(params->super.uct.c_dev_name, TL_RESOURCE_NAME_NONE);
     strcpy(params->super.uct.tl_name,  TL_RESOURCE_NAME_NONE);
 
     params->super.msg_size_list = calloc(params->super.msg_size_cnt,
@@ -451,6 +452,16 @@ static ucs_status_t setup_sock_rte_p2p(struct perftest_context *ctx)
                       sizeof(*ctx->params.super.msg_size_list) *
                       ctx->params.super.msg_size_cnt,
                       NULL, NULL);
+        }
+
+        /*
+         * Now that the parameter are sent to the server, potentially update the
+         * local dev_name.
+         */
+        if (strcmp(ctx->params.super.uct.c_dev_name, TL_RESOURCE_NAME_NONE)) {
+            memcpy(ctx->params.super.uct.dev_name,
+                   ctx->params.super.uct.c_dev_name,
+                   UCT_DEVICE_NAME_MAX);
         }
 
         ctx->sock_rte_group.sendfd     = sockfd;

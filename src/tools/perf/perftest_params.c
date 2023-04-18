@@ -95,7 +95,8 @@ static void usage(const struct perftest_context *ctx, const char *program)
     printf("     -I             print extra information about the operation\n");
     printf("\n");
     printf("  UCT only:\n");
-    printf("     -d <device>    device to use for testing\n");
+    printf("     -d <device>    device to use for testing. Specify a second time to use\n");
+    printf("                    a different device on the client than on the server.\n");
     printf("     -x <tl>        transport to use for testing\n");
     printf("     -D <layout>    data layout for sender side:\n");
     printf("                        short    - short messages (default, cannot be used for get)\n");
@@ -257,8 +258,20 @@ ucs_status_t parse_test_params(perftest_params_t *params, char opt,
 
     switch (opt) {
     case 'd':
-        ucs_snprintf_zero(params->super.uct.dev_name,
-                          sizeof(params->super.uct.dev_name), "%s", opt_arg);
+        /*
+         * Allow -d to be specified more than once. The first time specifies the
+         * same device for both server and client. If -d is specified a second
+         * time, the second value will determine which device the client (only)
+         * should use.
+         */
+        if (!strcmp(params->super.uct.dev_name, TL_RESOURCE_NAME_NONE)) {
+            ucs_snprintf_zero(params->super.uct.dev_name,
+                            sizeof(params->super.uct.dev_name), "%s", opt_arg);
+        } else {
+            ucs_snprintf_zero(params->super.uct.c_dev_name,
+                            sizeof(params->super.uct.c_dev_name), "%s", opt_arg);
+        }
+
         return UCS_OK;
     case 'x':
         ucs_snprintf_zero(params->super.uct.tl_name,
