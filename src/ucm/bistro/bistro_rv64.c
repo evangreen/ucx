@@ -74,12 +74,12 @@ ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
     uintptr_t hookp = (uintptr_t)hook;
 
     ucm_bistro_patch_t patch = {
-        .rega = LUI  (X31, ((0xFFFFF << 12) & ( ((hookp) >> 32) + 1 ) ) >> 12),
-        .regb = ADDI (X31, X31, ((0xFFF)    & ( ((hookp) >> 32) + 1 ) )      ),
-        .regc = LUI  (X30, ((0xFFFFF << 12) & ( (((hookp)) + 1)     ) ) >> 12),
+        .rega = LUI  (X31, ((0xFFFFF << 12) & (hookp >> 32)) >> 12),
+        .regb = ADDI (X31, X31, (0xFFF      & (hookp >> 32))),
+        .regc = LUI  (X30, ((0xFFFFF << 12) & hookp) >> 12),
         .regd = SLLI (X31, X31, 32),
         .rege = ADD  (X30, X31, X31),
-        .regf = JALR (X31, X0, ((0xFFF)     & ( ((hookp)) + 1)))
+        .regf = JALR (X31, X0, (0xFFF & hookp))
     };
 
     if (orig_func_p != NULL) {
