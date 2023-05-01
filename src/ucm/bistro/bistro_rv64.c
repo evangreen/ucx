@@ -45,7 +45,7 @@
  #define JALR(_regs, _regd, _imm) (((_imm) << 20) | ((_regs) << 15) | (0b000 << 12) | ((_regd) << 7) | (0x67))
 
  /**
-  * @brief ADDI - Add 12 bit immediate to source register, save to destination register 
+  * @brief ADDI - Add 12 bit immediate to source register, save to destination register
   *
   * @param[in] _reg  register number (0-31), @param[out] _reg register number (0-31), @param[imm] 12 bit immmediate value
   */
@@ -72,14 +72,22 @@ ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
 {
     ucs_status_t status;
     uintptr_t hookp = (uintptr_t)hook;
+    ucm_bistro_patch_t patch;
 
-    ucm_bistro_patch_t patch = {
-        .rega = LUI  (X31, ((0xFFFFF << 12) & ( ((hookp) >> 32) + 1 ) ) >> 12),
-        .regb = ADDI (X31, X31, ((0xFFF)    & ( ((hookp) >> 32) + 1 ) )      ),
-        .regc = LUI  (X30, ((0xFFFFF << 12) & ( (((hookp)) + 1)     ) ) >> 12),
+    /*
+     * Account for the fact that JALR, ADD, and ADDI sign extend and may result
+     * in subtractions by adding extra to compensate.
+     */
+    hookp += ((hookp >> 11) & 0x1) << 12;
+    hookp += ((hookp >> 31) & 0x1) << 32;
+    hookp += ((hookp >> (32 + 11)) & 0x1) << (32 + 12);
+    patch = (ucm_bistro_patch_t){
+        .rega = LUI  (X31, hookp >> (32 + 12)),
+        .regb = ADDI (X31, X31, ((hookp >> 32) & 0xFFF)),
+        .regc = LUI  (X30, hookp >> 12),
         .regd = SLLI (X31, X31, 32),
         .rege = ADD  (X30, X31, X31),
-        .regf = JALR (X31, X0, ((0xFFF)     & ( ((hookp)) + 1)))
+        .regf = JALR (X31, X0, (hookp & 0xFFF))
     };
 
     if (orig_func_p != NULL) {
